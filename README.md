@@ -1,2 +1,2 @@
 # seckill
-联并发SSM
+练习并发SSM
