@@ -10,7 +10,7 @@ public interface SuccessKilledDao {
      * @param userPhone
      * @return 如果影响行数>1，成功
      */
-    int insertSuccessKilled(@Param("seckillId") long seckillId, @Param("userPhone") long userPhone,@Param("state") int state);
+    int insertSuccessKilled(@Param("seckillId") long seckillId, @Param("userPhone") long userPhone);
 
     /**
      * 根据id查询SuccessKilled并携带秒杀产品对象实体
