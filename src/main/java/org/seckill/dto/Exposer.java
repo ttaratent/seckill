@@ -13,13 +13,12 @@ public class Exposer {
 
     //id
     private long seckillId;
-
     //系统给当前时间（毫秒）
+
     private long now;
-
     //秒杀时间
-    private long start;
 
+    private long start;
     private long end;
 
     public Exposer(boolean exposed, String md5, long seckillId) {
@@ -87,5 +86,17 @@ public class Exposer {
 
     public void setEnd(long end) {
         this.end = end;
+    }
+
+    @Override
+    public String toString() {
+        return "Exposer{" +
+                "exposed=" + exposed +
+                ", md5='" + md5 + '\'' +
+                ", seckillId=" + seckillId +
+                ", now=" + now +
+                ", start=" + start +
+                ", end=" + end +
+                '}';
     }
 }
