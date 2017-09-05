@@ -4,7 +4,9 @@
 var seckill ={
     //封装秒杀相关ajax的url
     URL : {
-
+        now : function() {
+            return '/seckill/time/now'
+        }
     },
     validatePhone : function(phone){
       if (phone && phone.length == 11 && !isNaN(phone)){
@@ -12,6 +14,29 @@ var seckill ={
       }else{
           return false;
       }
+    },
+    handleSeckillkill : function(){
+        //处理秒杀逻辑
+    },
+    countdown : function(seckillId, nowTime, startTime, endTime) {
+        var seckillBox = $('#seckill-box');
+        if(nowTime > endTime) {
+            //秒杀结束
+            seckillBox.html('秒杀结束！');
+        } else if (nowTime < startTime) {
+            //秒杀未开始，计时
+            var killTime = new Date(startTime + 1000);
+            seckillBox.countdown(killTime,function(event){
+                var format = event.strftime('秒杀倒计时：%D天 %H时 %M分 %S秒');
+                seckillBox.html(format);
+            }).on('finish.countdown', function(){
+                //获取秒杀地址，控制显示逻辑，执行秒杀
+                seckill.handleSeckillkill();
+            });
+        }else{
+            //秒杀开始
+            seckill.handleSeckillkill();
+        }
     },
     //详情页秒杀逻辑
     detail: {
@@ -47,6 +72,17 @@ var seckill ={
                     }
                 });
             }
+            //已经登录
+            //计时交互
+            $.get(seckill.URL.now(), {}, function(result) {
+                if (result && result['success']){
+                    var nowTime = result['data'];
+                    //时间判断
+                    seckill.countdown(seckillId, nowTime, startTime, endTime);
+                } else {
+                    console.log('result' + result)
+                }
+            });
         }
     }
 }
