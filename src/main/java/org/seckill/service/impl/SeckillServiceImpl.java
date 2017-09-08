@@ -41,7 +41,7 @@ public class SeckillServiceImpl implements SeckillService {
     private final String slat = "hiwhoqj51234eaietr@HSD%DF324sada2";
 
     public List<Seckill> getSeckillList() {
-        return secKillDao.queryAll(0,4);
+        return secKillDao.queryAll(0, 4);
     }
 
     public Seckill getById(long seckillId) {
@@ -69,12 +69,12 @@ public class SeckillServiceImpl implements SeckillService {
         Date nowTime = new Date();
         if (nowTime.getTime() < startTime.getTime()
                 || nowTime.getTime() > endTime.getTime()) {
-            return new Exposer(false,seckillId,nowTime.getTime(),startTime.getTime(),
+            return new Exposer(false, seckillId, nowTime.getTime(), startTime.getTime(),
                     endTime.getTime());
         }
         //转化特定字符串的过程，不可逆
         String md5 = getMD5(seckillId);   //TODO
-        return new Exposer(true, md5,seckillId);
+        return new Exposer(true, md5, seckillId);
     }
 
     private String getMD5(long seckillId) {
@@ -91,36 +91,37 @@ public class SeckillServiceImpl implements SeckillService {
      */
     @Transactional
     public SeckillExecution executeSeckill(long seckillId, long userPhone, String md5) throws SeckillException, RepeatKillException, SeckillCloseException {
-        if (md5 == null || !md5.equals((getMD5(seckillId)))){
+        if (md5 == null || !md5.equals((getMD5(seckillId)))) {
             throw new SeckillException("seckill data rewrite");
         }
         //执行秒杀逻辑：减库存 + 记录购买行为
         Date nowTime = new Date();
-        int updateCount = secKillDao.reduceNumber(seckillId, nowTime);
         try {
-            if (updateCount <= 0) {
-                //没有更新到记录，秒杀结束
-                throw new SeckillCloseException("seckill is closed");
+            //记录购买行为
+            int insertCount = successKilledDao.insertSuccessKilled(seckillId, userPhone);
+            //唯一：seckillId ,userPhone
+            if (insertCount <= 0) {
+                //重复秒杀
+                throw new RepeatKillException("seckill repeated");
             } else {
-                //记录购买行为
-                int insertCount = successKilledDao.insertSuccessKilled(seckillId, userPhone);
-                //唯一：seckillId ,userPhone
-                if (insertCount <= 0) {
-                    //重复秒杀
-                    throw new RepeatKillException("seckill repeated");
+                //减库存，热点商品竞争
+                int updateCount = secKillDao.reduceNumber(seckillId, nowTime);
+                if (updateCount <= 0) {
+                    //没有更新到记录，秒杀结束，rollback
+                    throw new SeckillCloseException("seckill is closed");
                 } else {
-                    //秒杀成功
+                    //秒杀成功，commit
                     SuccessKilled successKilled = successKilledDao
-                            .queryByIdWithSeckill(seckillId,userPhone);
-                    return new SeckillExecution(seckillId, SeckillStatEnum.SUCCESS,successKilled);
+                            .queryByIdWithSeckill(seckillId, userPhone);
+                    return new SeckillExecution(seckillId, SeckillStatEnum.SUCCESS, successKilled);
                 }
             }
-        } catch(SeckillCloseException e1) {
+        } catch (SeckillCloseException e1) {
             throw e1;
-        }catch(RepeatKillException e2) {
+        } catch (RepeatKillException e2) {
             throw e2;
-        } catch(Exception e) {
-            logger.error(e.getMessage(),e);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
             //所有编译器异常，转换为运行期异常
             throw new SeckillException("seckill inner error:" + e.getMessage());
         }
